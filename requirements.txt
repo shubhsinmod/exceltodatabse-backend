@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+pydantic-settings
+alembic
+psycopg[binary]
+pandas
+openpyxl
+python-multipart
