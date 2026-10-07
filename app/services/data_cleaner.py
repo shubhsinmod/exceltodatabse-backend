@@ -14,16 +14,17 @@ class DataCleaner:
         header_row_idx = header_info["header_row"]
         data_start_idx = header_info["data_start_row"]
         
-        if len(block_df) <= header_row_idx:
+        if len(block_df) <= data_start_idx:
             return None
             
-        # Extract raw headers
-        raw_headers = block_df.iloc[header_row_idx].fillna(f"Unnamed").astype(str).tolist()
-        
-        # Determine valid columns (not completely empty and not just 'Unnamed' with no data)
-        # We look at the data rows to see if the column has data
         data_df = block_df.iloc[data_start_idx:].copy()
         
+        if header_row_idx == -1:
+            # No header detected, use generic names
+            raw_headers = [f"Column_{i+1}" for i in range(len(block_df.columns))]
+        else:
+            raw_headers = block_df.iloc[header_row_idx].fillna("Unnamed").astype(str).tolist()
+            
         valid_columns = []
         clean_headers = []
         normalized_headers = []
@@ -33,21 +34,18 @@ class DataCleaner:
             if data_df.iloc[:, col_idx].notna().any():
                 valid_columns.append(col_idx)
                 
-                # Clean header name
                 clean_name = str(col_name).strip()
                 if "Unnamed" in clean_name and not data_df.iloc[:, col_idx].notna().any():
-                     continue # skip truly empty unnamed columns
+                     continue 
                 
                 if "Unnamed" in clean_name:
                     clean_name = f"Column_{col_idx+1}"
                     
                 clean_headers.append(clean_name)
                 
-                # Normalize
                 normalized = clean_name.lower().replace(" ", "_").replace(r"[^\w\s]", "")
                 normalized_headers.append(normalized)
                 
-        # Filter dataframe columns
         clean_data_df = data_df.iloc[:, valid_columns].copy()
         clean_data_df.columns = normalized_headers
         
