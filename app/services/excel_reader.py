@@ -82,6 +82,10 @@ class ExcelReader:
                 parquet_path = os.path.join(cache_dir, f"{clean_table['table_name']}.parquet")
                 # Ensure string column names for parquet
                 data_df.columns = data_df.columns.astype(str)
+                # Convert object types to string to avoid pyarrow mixed-type errors
+                for col in data_df.columns:
+                    if data_df[col].dtype == 'object':
+                        data_df[col] = data_df[col].astype(str)
                 data_df.to_parquet(parquet_path)
                 
                 tables_metadata.append(clean_table)

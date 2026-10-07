@@ -24,14 +24,16 @@ async def upload_schema(file: UploadFile = File(...)):
     if not file.filename.endswith((".sql", ".json", ".txt")):
         raise HTTPException(status_code=400, detail="Invalid file type")
     content = await file.read()
-    is_json = file.filename.endswith(".json")
+    is_json = file.filename.endswith('.json')
+    schema_info = parse_sql_schema(content, is_json)
+    return {"status": "SUCCESS", "schema_info": schema_info}
 @router.post("/import/{import_id}/auto_match")
 async def auto_match_endpoint(import_id: UUID, file: UploadFile = File(...), db: Session = Depends(get_db)):
     if not file.filename.endswith((".sql", ".json", ".txt")):
         raise HTTPException(status_code=400, detail="Invalid file type")
     content = await file.read()
     is_json = file.filename.endswith(".json")
-    schema_info = parse_sql_schema(content.decode("utf-8"), is_json)
+    schema_info = parse_sql_schema(content, is_json)
     
     try:
         # Save schema info somewhere if needed, but for now we'll just return it and the matches
@@ -46,11 +48,12 @@ from pydantic import BaseModel
 class GenerateRequest(BaseModel):
     schema_info: list
     matched_columns: list
+    include_identity: bool = False
 
 @router.post("/import/{import_id}/generate_sql")
 async def generate_sql_endpoint(import_id: UUID, request: GenerateRequest, db: Session = Depends(get_db)):
     try:
-        sql_script = ImportService.generate_sql_from_matches(import_id, request.matched_columns, request.schema_info, db)
+        sql_script = ImportService.generate_sql_from_matches(import_id, request.matched_columns, request.schema_info, db, request.include_identity)
         return {"status": "SUCCESS", "sql_script": sql_script}
     except Exception as e:
         import traceback
