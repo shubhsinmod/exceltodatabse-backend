@@ -30,17 +30,28 @@ class ExcelReader:
         """
         inspection_result = WorkbookInspector.inspect(file_path)
         
-        xl = pd.ExcelFile(file_path)
+        file_ext = os.path.splitext(file_path)[1].lower()
         
         cache_dir = os.path.join(settings.UPLOAD_DIR, str(import_id))
         os.makedirs(cache_dir, exist_ok=True)
         
         tables_metadata = []
         
-        for sheet_name in xl.sheet_names:
-            df = xl.parse(sheet_name)
+        # Determine sheets and dataframes based on file extension
+        sheet_dataframes = {}
+        if file_ext in ['.xlsx', '.xls']:
+            xl = pd.ExcelFile(file_path)
+            for sheet_name in xl.sheet_names:
+                sheet_dataframes[sheet_name] = xl.parse(sheet_name, header=None)
+        elif file_ext == '.csv':
+            sheet_dataframes["CSV Data"] = pd.read_csv(file_path, header=None, low_memory=False, on_bad_lines='skip')
+        elif file_ext == '.json':
+            sheet_dataframes["JSON Data"] = pd.read_json(file_path)
+        else:
+            sheet_dataframes["Data"] = pd.read_csv(file_path, header=None, low_memory=False, on_bad_lines='skip')
             
-            # Detect multiple tables in the sheet
+        for sheet_name, df in sheet_dataframes.items():
+            # Detect multiple tables in the sheet/dataframe
             detected_tables = TableDetector.detect_tables(df, sheet_name)
             
             for table_info in detected_tables:
@@ -69,6 +80,12 @@ class ExcelReader:
                 
                 # Save as parquet cache
                 parquet_path = os.path.join(cache_dir, f"{clean_table['table_name']}.parquet")
+                # Ensure string column names for parquet
+                data_df.columns = data_df.columns.astype(str)
+                # Convert object types to string to avoid pyarrow mixed-type errors
+                for col in data_df.columns:
+                    if data_df[col].dtype == 'object':
+                        data_df[col] = data_df[col].astype(str)
                 data_df.to_parquet(parquet_path)
                 
                 tables_metadata.append(clean_table)

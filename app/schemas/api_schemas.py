@@ -30,6 +30,7 @@ class ColumnMapping(BaseModel):
     target_column: str
     target_type: str # string, integer, float, date, boolean
     is_primary_key: bool = False
+    include: bool = True
 
 class TableMapping(BaseModel):
     source_table_name: str

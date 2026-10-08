@@ -5,6 +5,10 @@ from app.database import engine, Base
 import os
 from app.config import settings
 
+# Ensure models are registered and tables are created
+import app.models.domain  # noqa: F401
+Base.metadata.create_all(bind=engine)
+
 # Create upload dir if not exists
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
