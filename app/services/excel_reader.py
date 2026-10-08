@@ -44,11 +44,11 @@ class ExcelReader:
             for sheet_name in xl.sheet_names:
                 sheet_dataframes[sheet_name] = xl.parse(sheet_name, header=None)
         elif file_ext == '.csv':
-            sheet_dataframes["CSV Data"] = pd.read_csv(file_path, header=None, on_bad_lines='skip')
+            sheet_dataframes["CSV Data"] = pd.read_csv(file_path, header=None, low_memory=False, on_bad_lines='skip')
         elif file_ext == '.json':
             sheet_dataframes["JSON Data"] = pd.read_json(file_path)
         else:
-            sheet_dataframes["Data"] = pd.read_csv(file_path, header=None, on_bad_lines='skip')
+            sheet_dataframes["Data"] = pd.read_csv(file_path, header=None, low_memory=False, on_bad_lines='skip')
             
         for sheet_name, df in sheet_dataframes.items():
             # Detect multiple tables in the sheet/dataframe

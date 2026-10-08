@@ -34,9 +34,12 @@ def mock_read(*args, **kwargs):
 from app.services.excel_reader import ExcelReader
 ExcelReader.read_cached_table = mock_read
 
+from app.models.domain import ImportHistory
+
 db = SessionLocal()
 try:
-    uid = uuid.UUID(import_id_str)
+    latest = db.query(ImportHistory).order_by(ImportHistory.upload_date.desc()).first()
+    uid = latest.id if latest else uuid.uuid4()
     schema_info = parse_sql_schema(sql_script_schema)
     
     matched = [
